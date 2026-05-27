@@ -26,6 +26,7 @@ class PageController extends Controller
     {
         $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
         $article = \App\Models\Article::where('slug', $slug)->where('is_published', true)->firstOrFail();
+        $article->increment('views');
         return view('home.baca', compact('settings', 'article'));
     }
 }
