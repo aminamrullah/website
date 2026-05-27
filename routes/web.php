@@ -16,3 +16,28 @@ Route::get('/storage/{path}', function ($path) {
     }
     return response()->file($filePath);
 })->where('path', '.*');
+
+// Route khusus untuk melayani aplikasi JS (React/Vue/Svelte) dari folder dist
+Route::get('/assets/{file}', function ($file) {
+    $path = base_path('dist/assets/' . $file);
+    if (file_exists($path)) {
+        return response()->file($path);
+    }
+    abort(404);
+})->where('file', '.*');
+
+Route::get('/{file}', function ($file) {
+    $path = base_path('dist/' . $file);
+    if (file_exists($path)) {
+        return response()->file($path);
+    }
+    abort(404);
+})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt)');
+
+Route::get('/app/{any?}', function () {
+    $path = base_path('dist/index.html');
+    if (file_exists($path)) {
+        return file_get_contents($path);
+    }
+    abort(404, 'File index.html tidak ditemukan di folder dist.');
+})->where('any', '.*');
