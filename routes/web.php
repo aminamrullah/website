@@ -18,7 +18,7 @@ Route::get('/storage/{path}', function ($path) {
 })->where('path', '.*');
 
 // Route khusus untuk melayani aplikasi JS (React/Vue/Svelte) dari folder dist
-Route::get('/assets/{file}', function ($file) {
+Route::get('/app/assets/{file}', function ($file) {
     $path = base_path('dist/assets/' . $file);
     if (file_exists($path)) {
         return response()->file($path);
