@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        try {
+            $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+            \Illuminate\Support\Facades\View::share('settings', $settings);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\View::share('settings', []);
+        }
     }
 }
