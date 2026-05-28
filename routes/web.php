@@ -8,9 +8,7 @@ Route::get('/', [PageController::class, 'index'])->name('home');
 Route::get('/berita', [PageController::class, 'berita'])->name('berita');
 Route::get('/berita/{slug}', [PageController::class, 'bacaBerita'])->name('baca-berita');
 
-// Redirect login ke aplikasi React
-Route::redirect('/login', '/app/login');
-Route::redirect('/admin/login', '/app/login');
+// Redirect login dihapus karena website memiliki login sendiri
 
 // Route khusus untuk memperbaiki masalah gambar tidak tampil di Windows (php artisan serve symlink bug)
 Route::get('/storage/{path}', function ($path) {
