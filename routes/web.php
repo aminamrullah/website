@@ -21,7 +21,14 @@ Route::get('/storage/{path}', function ($path) {
 Route::get('/app/assets/{file}', function ($file) {
     $path = base_path('dist/assets/' . $file);
     if (file_exists($path)) {
-        return response()->file($path);
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $headers = [];
+        if ($extension === 'js') {
+            $headers['Content-Type'] = 'application/javascript';
+        } elseif ($extension === 'css') {
+            $headers['Content-Type'] = 'text/css';
+        }
+        return response()->file($path, $headers);
     }
     abort(404);
 })->where('file', '.*');
