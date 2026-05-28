@@ -40,8 +40,22 @@ Route::get('/{file}', function ($file) {
     if (file_exists($path)) {
         return response()->file($path);
     }
-    abort(404);
-})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt)');
+
+    // Jika gambar di-upload via Filament lokal (tanpa path /storage/ di URL)
+    $storagePath = storage_path('app/public/' . $file);
+    if (file_exists($storagePath)) {
+        $extension = pathinfo($storagePath, PATHINFO_EXTENSION);
+        $headers = [];
+        if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'webp', 'svg'])) {
+            $headers['Content-Type'] = 'image/' . ($extension === 'svg' ? 'svg+xml' : $extension);
+            if (strtolower($extension) === 'jpg') $headers['Content-Type'] = 'image/jpeg';
+        }
+        return response()->file($storagePath, $headers);
+    }
+
+    // Jika file tidak ada di lokal, kemungkinan besar file ada di server pusat API
+    return redirect('https://pesantren.pospoinplus.com/storage/' . $file);
+})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt|webp)');
 
 Route::get('/app/{any?}', function () {
     $path = base_path('dist/index.html');
