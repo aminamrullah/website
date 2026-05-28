@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile()
             ->brandName('Pesantren Fatkhul Ulum')
             ->brandLogo(fn () => asset('logo.png'))
             ->brandLogoHeight('2.5rem')
