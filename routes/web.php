@@ -8,6 +8,30 @@ Route::get('/', [PageController::class, 'index'])->name('home');
 Route::get('/berita', [PageController::class, 'berita'])->name('berita');
 Route::get('/berita/{slug}', [PageController::class, 'bacaBerita'])->name('baca-berita');
 
+Route::get('/fix-storage', function () {
+    $targetPath = storage_path('app/public');
+    
+    // Gunakan DOCUMENT_ROOT agar symlink dibuat tepat di mana web server membaca file
+    $publicPath = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/storage';
+
+    // Hapus file/symlink lama jika ada agar tidak bentrok
+    if (file_exists($publicPath)) {
+        if (is_link($publicPath)) {
+            unlink($publicPath);
+        } else {
+            rename($publicPath, $publicPath . '_backup_' . time());
+        }
+    }
+
+    // Eksekusi pembuatan symlink
+    try {
+        symlink($targetPath, $publicPath);
+        return "SUKSES!<br><br>Symlink dibuat di folder website: <b>{$publicPath}</b><br>Menunjuk ke penyimpanan asli: <b>{$targetPath}</b>";
+    } catch (\Exception $e) {
+        return "GAGAL. Pesan Error: " . $e->getMessage();
+    }
+});
+
 // Redirect login dihapus karena website memiliki login sendiri
 
 // Route khusus untuk memperbaiki masalah gambar tidak tampil di Windows (php artisan serve symlink bug)
