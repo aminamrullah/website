@@ -19,6 +19,8 @@ class ArticleForm
                 TextInput::make('slug')
                     ->required(),
                 FileUpload::make('image')
+                    ->disk('public')
+                    ->directory('articles')
                     ->image()
                     ->imageEditor()
                     ->imageResizeMode('cover')

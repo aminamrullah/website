@@ -15,6 +15,8 @@ class GalleryForm
                 TextInput::make('title')
                     ->default(null),
                 FileUpload::make('image')
+                    ->disk('public')
+                    ->directory('galleries')
                     ->image()
                     ->imageEditor()
                     ->imageResizeMode('cover')

@@ -34,6 +34,8 @@ class SettingForm
                     ->columnSpanFull(),
                     
                 \Filament\Forms\Components\FileUpload::make('file_value')
+                    ->disk('public')
+                    ->directory('settings')
                     ->label('Unggah Gambar')
                     ->image()
                     ->imageEditor()
