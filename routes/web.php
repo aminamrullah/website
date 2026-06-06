@@ -1,8 +1,22 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
 
 use App\Http\Controllers\PageController;
+
+// Proxy endpoint for frontend built app: forward /api/public/landing/{host}
+// to the central API so the SPA (built with base '/app/') can request
+// tenant landing data via axios instance which prefixes '/api'.
+Route::get('/api/public/landing/{host}', function ($host) {
+    $target = 'https://pesantren.pospoinplus.com/public/landing/' . $host;
+    try {
+        $resp = Http::withHeaders(['Accept' => 'application/json'])->get($target);
+        return response()->json($resp->json(), $resp->status());
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Upstream request failed: ' . $e->getMessage()], 502);
+    }
+});
 
 Route::get('/', [PageController::class, 'index'])->name('home');
 Route::get('/berita', [PageController::class, 'berita'])->name('berita');
