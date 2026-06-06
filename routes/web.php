@@ -43,16 +43,20 @@ Route::get('/storage/{path}', function ($path) {
     return response()->file($filePath);
 })->where('path', '.*');
 
-// Route khusus untuk melayani assets dari folder dist
+// Route untuk assets dari folder dist
 Route::get('/app/assets/{file}', function ($file) {
     $path = base_path('dist/assets/' . $file);
-    if (file_exists($path)) {
+    if (file_exists($path) && is_file($path)) {
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $headers = [];
+        $headers = [
+            'Cache-Control' => 'public, max-age=31536000'
+        ];
         if ($extension === 'js') {
-            $headers['Content-Type'] = 'application/javascript';
+            $headers['Content-Type'] = 'application/javascript; charset=utf-8';
         } elseif ($extension === 'css') {
-            $headers['Content-Type'] = 'text/css';
+            $headers['Content-Type'] = 'text/css; charset=utf-8';
+        } elseif (in_array($extension, ['woff', 'woff2'])) {
+            $headers['Content-Type'] = 'font/' . $extension;
         }
         return response()->file($path, $headers);
     }
@@ -63,16 +67,36 @@ Route::get('/app/assets/{file}', function ($file) {
 Route::get('/app/{file}', function ($file) {
     $path = base_path('dist/' . $file);
     if (file_exists($path) && is_file($path)) {
-        return response()->file($path);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'svg' => 'image/svg+xml',
+            'ico' => 'image/x-icon',
+            'webp' => 'image/webp',
+            'json' => 'application/json',
+            'txt' => 'text/plain',
+            'manifest' => 'application/manifest+json'
+        ];
+        $headers = [];
+        if (isset($mimeTypes[$extension])) {
+            $headers['Content-Type'] = $mimeTypes[$extension];
+        }
+        return response()->file($path, $headers);
     }
-    abort(404);
+    return null;
 })->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt|webp|json|manifest)');
 
-// Route fallback untuk SPA - harus paling akhir
+// Route fallback untuk SPA - serve index.html untuk semua route lainnya
 Route::get('/app/{any?}', function () {
     $path = base_path('dist/index.html');
     if (file_exists($path)) {
-        return file_get_contents($path);
+        $content = file_get_contents($path);
+        return response($content, 200, [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Cache-Control' => 'public, must-revalidate, max-age=0'
+        ]);
     }
     abort(404, 'File index.html tidak ditemukan di folder dist.');
 })->where('any', '.*');
