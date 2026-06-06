@@ -151,22 +151,39 @@ Route::get('/app/{file}', function ($file) {
 Route::get('/app/debug-spa', function () {
     $path = base_path('dist/index.html');
     return response()->json([
-        'path' => $path,
-        'exists' => file_exists($path),
         'base_path' => base_path(),
-        'dist_folder' => base_path('dist'),
+        'index_path' => $path,
+        'exists' => file_exists($path),
+        'is_file' => is_file($path),
+        'dist_dir' => base_path('dist'),
         'dist_exists' => is_dir(base_path('dist')),
+        'dist_contents' => file_exists(base_path('dist')) ? array_slice(scandir(base_path('dist')), 2, 10) : 'N/A'
     ]);
 });
 
 Route::get('/app/{any?}', function ($any = null) {
+    $publicPath = public_path();
     $indexPath = base_path('dist/index.html');
     
-    if (!file_exists($indexPath)) {
-        return response('dist/index.html not found at: ' . $indexPath, 404);
+    // Try multiple paths untuk fallback
+    $possiblePaths = [
+        base_path('dist/index.html'),
+        public_path('../dist/index.html'),
+        $_SERVER['DOCUMENT_ROOT'] . '/../dist/index.html',
+    ];
+    
+    $content = null;
+    foreach ($possiblePaths as $path) {
+        if (file_exists($path)) {
+            $content = file_get_contents($path);
+            break;
+        }
     }
     
-    $content = file_get_contents($indexPath);
+    if (!$content) {
+        return response('SPA fallback failed. Tried: ' . json_encode($possiblePaths), 500);
+    }
+    
     return response($content, 200, [
         'Content-Type' => 'text/html; charset=utf-8',
         'Cache-Control' => 'public, must-revalidate, max-age=0'
