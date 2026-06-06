@@ -43,7 +43,7 @@ Route::get('/storage/{path}', function ($path) {
     return response()->file($filePath);
 })->where('path', '.*');
 
-// Route khusus untuk melayani aplikasi JS (React/Vue/Svelte) dari folder dist
+// Route khusus untuk melayani assets dari folder dist
 Route::get('/app/assets/{file}', function ($file) {
     $path = base_path('dist/assets/' . $file);
     if (file_exists($path)) {
@@ -59,28 +59,16 @@ Route::get('/app/assets/{file}', function ($file) {
     abort(404);
 })->where('file', '.*');
 
-Route::get('/{file}', function ($file) {
+// Route untuk static files di root dist (favicon, images, dll)
+Route::get('/app/{file}', function ($file) {
     $path = base_path('dist/' . $file);
-    if (file_exists($path)) {
+    if (file_exists($path) && is_file($path)) {
         return response()->file($path);
     }
+    abort(404);
+})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt|webp|json|manifest)');
 
-    // Jika gambar di-upload via Filament lokal (tanpa path /storage/ di URL)
-    $storagePath = storage_path('app/public/' . $file);
-    if (file_exists($storagePath)) {
-        $extension = pathinfo($storagePath, PATHINFO_EXTENSION);
-        $headers = [];
-        if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'webp', 'svg'])) {
-            $headers['Content-Type'] = 'image/' . ($extension === 'svg' ? 'svg+xml' : $extension);
-            if (strtolower($extension) === 'jpg') $headers['Content-Type'] = 'image/jpeg';
-        }
-        return response()->file($storagePath, $headers);
-    }
-
-    // Jika file tidak ada di lokal, kemungkinan besar file ada di server pusat API
-    return redirect('https://pesantren.pospoinplus.com/storage/' . $file);
-})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt|webp)');
-
+// Route fallback untuk SPA - harus paling akhir
 Route::get('/app/{any?}', function () {
     $path = base_path('dist/index.html');
     if (file_exists($path)) {
