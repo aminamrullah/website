@@ -107,9 +107,16 @@ Route::get('/app/assets/{file}', function ($file) {
 
 // Route untuk static files di root dist (favicon, images, dll)
 Route::get('/app/{file}', function ($file) {
-    // Skip jika file mengandung titik (ada extension) untuk static files
+    // Hanya serve files dengan extension yang valid
     if (!str_contains($file, '.')) {
         return null; // Biarkan fallback ke /app/{any?}
+    }
+    
+    // Hanya allow file extensions tertentu (untuk security)
+    $allowed = ['png', 'jpg', 'jpeg', 'svg', 'ico', 'txt', 'webp', 'json', 'manifest', 'gif', 'woff', 'woff2'];
+    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed)) {
+        abort(403, 'File type tidak diizinkan');
     }
     
     $path = base_path('dist/' . $file);
@@ -117,7 +124,6 @@ Route::get('/app/{file}', function ($file) {
         abort(404, "File tidak ditemukan: {$file}");
     }
     
-    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $mimeTypes = [
         'png' => 'image/png',
         'jpg' => 'image/jpeg',
@@ -125,27 +131,42 @@ Route::get('/app/{file}', function ($file) {
         'svg' => 'image/svg+xml',
         'ico' => 'image/x-icon',
         'webp' => 'image/webp',
+        'gif' => 'image/gif',
         'json' => 'application/json',
         'txt' => 'text/plain',
-        'manifest' => 'application/manifest+json'
+        'manifest' => 'application/manifest+json',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2'
     ];
     
-    $headers = [];
-    if (isset($mimeTypes[$extension])) {
-        $headers['Content-Type'] = $mimeTypes[$extension];
+    $headers = ['Cache-Control' => 'public, max-age=31536000'];
+    if (isset($mimeTypes[$ext])) {
+        $headers['Content-Type'] = $mimeTypes[$ext];
     }
     
     return response()->file($path, $headers);
-})->where('file', '.*\.(png|jpg|jpeg|svg|ico|txt|webp|json|manifest)');
+})->where('file', '^[a-zA-Z0-9._/-]+\.[a-zA-Z0-9]+$');
 
 // Route fallback untuk SPA - serve index.html untuk semua route lainnya
-Route::get('/app/{any?}', function ($any = null) {
+Route::get('/app/debug-spa', function () {
     $path = base_path('dist/index.html');
-    if (!file_exists($path)) {
-        abort(404, 'File index.html tidak ditemukan di folder dist.');
+    return response()->json([
+        'path' => $path,
+        'exists' => file_exists($path),
+        'base_path' => base_path(),
+        'dist_folder' => base_path('dist'),
+        'dist_exists' => is_dir(base_path('dist')),
+    ]);
+});
+
+Route::get('/app/{any?}', function ($any = null) {
+    $indexPath = base_path('dist/index.html');
+    
+    if (!file_exists($indexPath)) {
+        return response('dist/index.html not found at: ' . $indexPath, 404);
     }
     
-    $content = file_get_contents($path);
+    $content = file_get_contents($indexPath);
     return response($content, 200, [
         'Content-Type' => 'text/html; charset=utf-8',
         'Cache-Control' => 'public, must-revalidate, max-age=0'
